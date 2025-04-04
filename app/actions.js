@@ -1,40 +1,34 @@
 "use server";
 
-import { google } from "googleapis";
+import postgres from "postgres";
+import { revalidatePath } from "next/cache";
 
-export async function selectAldeias() {
+const sql = postgres(process.env.DATABASE_URL, {
+  ssl: "allow",
+});
+
+export async function selectPoints() {
   try {
-    const auth = new google.auth.GoogleAuth({
-      credentials: {
-        client_email: process.env.GOOGLE_CLIENT_EMAIL,
-        private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
-      },
-      scopes: ["https://www.googleapis.com/auth/spreadsheets.readonly"],
-    });
-
-    const sheets = google.sheets({ version: "v4", auth });
-
-    const response = await sheets.spreadsheets.values.get({
-      spreadsheetId: process.env.GOOGLE_SHEET_ID,
-      range: "infoaldeias!A1:Z1000",
-    });
-
-    const rows = response.data.values;
-
-    if (!rows?.length) {
-      throw new Error("Nenhum dado encontrado na planilha");
-    }
-
-    const headers = rows[0];
-    return rows.slice(1).map((row) => {
-      return headers.reduce((obj, header, index) => {
-        obj[header] = row[index] || null;
-
-        return obj;
-      }, {});
-    });
+    const result = await sql`
+            SELECT
+                id,
+                corpodagua,
+                med,
+                med_13,
+                med_14,
+                med_15,
+                med_16,
+                med_17,
+                med_18,
+                med_19,
+                ST_X(ST_Transform(geom, 4326)) AS longitude,
+                ST_Y(ST_Transform(geom, 4326)) AS latitude
+            FROM turbidez_rj;
+        `;
+    revalidatePath("/");
+    return result;
   } catch (error) {
-    console.error("Erro ao acessar Google Sheets:", error);
-    throw new Error("Falha ao buscar dados da planilha");
+    console.error(error);
+    return [];
   }
 }

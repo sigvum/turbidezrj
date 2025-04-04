@@ -176,7 +176,7 @@ const SidePanel = ({ colorScheme, onColorSchemeChange, colorMapping }) => {
   </div>
   <hr>
   <h4 style="margin:0 0 11px; border-bottom:1px solid #eee; padding-bottom:5px; padding-top:5px;">
-    © 2025 <a href="https://github.com/sigvum/turbidezrj" target=_blank>TurbidezRJ</a> - v0.1.1</span>
+    © 2025 <a href="https://github.com/sigvum/turbidezrj" target=_blank>TurbidezRJ</a> - v0.1.2</span>
   </h4>
 `;
 
@@ -510,7 +510,7 @@ const MapContent = () => {
 
   // Função para calcular o centro usando Turf
   const calcularCentroTurf = (pontos) => {
-    if (pontos.length === 0) return [-22.9068, -43.1729]; // Fallback
+    if (pontos.length === 0) return [-15.799698, -47.894194]; // Fallback
 
     // Cria uma FeatureCollection com todos os pontos
     const featureCollection = {
@@ -536,66 +536,6 @@ const MapContent = () => {
     }
   }, [pontos]);
 
-  // Nova paleta de cores em tons de vermelho
-  const generateColorMapping = (items) => {
-    const redColors = [
-      "#FFB3B3", // Rosa claro
-      "#FF8080", // Vermelho claro
-      "#FF4D4D", // Vermelho médio
-      "#FF1A1A", // Vermelho vibrante
-      "#E60000", // Vermelho forte
-      "#CC0000", // Vermelho escuro
-      "#990000", // Vermelho muito escuro
-      "#660000", // Bordô
-      "#330000", // Quase preto avermelhado
-    ];
-
-    // Categoriza os pontos por nível de turbidez
-    const categories = ["baixa", "media", "alta", "muito_alta"];
-    const mapping = {};
-
-    // Inicializa as categorias
-    categories.forEach((category) => {
-      mapping[category] = {
-        colors: {},
-        counts: {},
-      };
-    });
-
-    // Agrupa os pontos por corpo d'água para cada categoria
-    items.forEach((item) => {
-      const turbidez = parseFloat(item.med);
-      const corpoDagua = item.corpodagua;
-
-      // Determina a categoria baseada no valor de turbidez
-      let category;
-      if (turbidez < 20) {
-        category = "baixa";
-      } else if (turbidez >= 20 && turbidez < 40) {
-        category = "media";
-      } else if (turbidez >= 40 && turbidez < 60) {
-        category = "alta";
-      } else {
-        category = "muito_alta";
-      }
-
-      // Incrementa a contagem para este corpo d'água na categoria apropriada
-      if (!mapping[category].counts[corpoDagua]) {
-        mapping[category].counts[corpoDagua] = 0;
-      }
-      mapping[category].counts[corpoDagua]++;
-
-      // Atribui uma cor se ainda não tiver
-      if (!mapping[category].colors[corpoDagua]) {
-        const colorIndex =
-          Object.keys(mapping[category].colors).length % redColors.length;
-        mapping[category].colors[corpoDagua] = redColors[colorIndex];
-      }
-    });
-
-    return mapping;
-  };
-
   useEffect(() => {
     async function fetchData() {
       try {
@@ -620,9 +560,10 @@ const MapContent = () => {
   return (
     <div style={{ height: "100vh", width: "100wh" }}>
       <MapContainer
+        zoom={8}
         whenCreated={setMap}
-        zoomControl={true}
         ref={mapRef}
+        zoomControl={true}
         center={calcularCentroTurf(pontos)}
         style={{ height: "100%", width: "100%" }}
       >

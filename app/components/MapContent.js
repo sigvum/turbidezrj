@@ -6,15 +6,15 @@ import {
   Marker,
   useMap,
   ScaleControl,
+  GeoJSON,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet.control.layers.tree/L.Control.Layers.Tree.css";
 import { PacmanLoader } from "react-spinners";
-import { selectPoints } from "../actions";
+import { selectPoints, getRioGeometry } from "../actions";
 import L from "leaflet";
 import { bbox, center } from "@turf/turf";
 
-// Função para ajustar o mapa a todos os pontos
 const ajustarVisualizacao = (pontos, map) => {
   if (pontos.length === 0) return;
 
@@ -36,10 +36,61 @@ const ajustarVisualizacao = (pontos, map) => {
   ]);
 };
 
-const SidePanel = ({ colorScheme, onColorSchemeChange, colorMapping }) => {
+const calcularIntervalos = (pontos, colorScheme, numIntervalos = 7) => {
+  const valores = pontos
+    .map((ponto) => {
+      let valor;
+      if (colorScheme === "med_all") {
+        valor = parseFloat(ponto.med);
+      } else {
+        const year = colorScheme.split("_")[1];
+        valor = parseFloat(ponto[`med_${year}`]);
+      }
+      return isNaN(valor) ? null : valor;
+    })
+    .filter((valor) => valor !== null)
+    .sort((a, b) => a - b);
+
+  if (valores.length === 0) return [];
+
+  const intervalos = [];
+  const passo = 1 / numIntervalos;
+
+  for (let i = 0; i < numIntervalos; i++) {
+    const minQuantile = i * passo;
+    const maxQuantile = (i + 1) * passo;
+
+    const minIndex = Math.floor(minQuantile * (valores.length - 1));
+    const maxIndex = Math.floor(maxQuantile * (valores.length - 1));
+
+    const min = valores[minIndex];
+    const max =
+      i === numIntervalos - 1 ? valores[valores.length - 1] : valores[maxIndex];
+
+    const lightness = 90 - (i * 60) / (numIntervalos - 1);
+
+    intervalos.push({
+      min,
+      max,
+      lightness,
+    });
+  }
+
+  return intervalos;
+};
+
+const SidePanel = ({ colorScheme, onColorSchemeChange, pontos }) => {
   const map = useMap();
   const [fontSize, setFontSize] = useState(0.65);
   const [panelWidth, setPanelWidth] = useState(13);
+  const [intervalos, setIntervalos] = useState([]);
+
+  useEffect(() => {
+    if (pontos && pontos.length > 0) {
+      const novosIntervalos = calcularIntervalos(pontos, colorScheme);
+      setIntervalos(novosIntervalos);
+    }
+  }, [pontos, colorScheme]);
 
   const increaseFontSize = () => {
     setFontSize((prev) => Math.min(prev + 0.1, 1.2));
@@ -73,114 +124,139 @@ const SidePanel = ({ colorScheme, onColorSchemeChange, colorMapping }) => {
       `;
 
       const categoryHtml = `
-  <div style="display:flex; flex-direction:column; align-items:center; margin:10px 0;">
-    <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="#1E90FF" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-droplets">
-      <path d="M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.84-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z"/>
-      <path d="M12.56 6.6A10.97 10.97 0 0 0 14 3.02c.5 2.5 2 4.9 4 6.5s3 3.5 3 5.5a6.98 6.98 0 0 1-11.91 4.97"/>
-    </svg>
-    <div style="
-      margin-top: 8px;
-      font-weight: bold;
-      color: black;
-      font-size: 1.7rem;
-      text-shadow: 
-        -1px -1px 0 white,
-        1px -1px 0 white,
-        -1px 1px 0 white,
-        1px 1px 0 white;
-    ">TurbidezRJ</div>
-  </div>
-   <div style="
-      margin-top: 4px;
-      font-size: 0.8rem;
-      color: white;
-      text-align: justify;
-    ">Mapa interativo com dados da Agência Nacional de Águas relativos às médias de turbidez da água no Rio de Janeiro no período entre 2013 a 2019</div>
-  <hr>
-  <h4 style="margin:0 0 11px; border-bottom:1px solid #eee; padding-bottom:5px; padding-top:5px;">
-    Categorizar por:
-  </h4>
-  <div style="display:grid; grid-template-columns:1fr; gap:8px; margin-bottom:15px;">
-    <label style="display:flex; align-items:center; gap:5px;">
-      <input 
-        type="radio" 
-        name="category" 
-        ${colorScheme === "med_13" ? "checked" : ""}
-        data-scheme="med_13"
-      />
-      Média de turbidez em 2013
-    </label>
-    <label style="display:flex; align-items:center; gap:5px;">
-      <input 
-        type="radio" 
-        name="category" 
-        ${colorScheme === "med_14" ? "checked" : ""}
-        data-scheme="med_14"
-      />
-      Média de turbidez em 2014
-    </label>
-    <label style="display:flex; align-items:center; gap:5px;">
-      <input 
-        type="radio" 
-        name="category" 
-        ${colorScheme === "med_15" ? "checked" : ""}
-        data-scheme="med_15"
-      />
-      Média de turbidez em 2015
-    </label>
-    <label style="display:flex; align-items:center; gap:5px;">
-      <input 
-        type="radio" 
-        name="category" 
-        ${colorScheme === "med_16" ? "checked" : ""}
-        data-scheme="med_16"
-      />
-      Média de turbidez em 2016
-    </label>
-    <label style="display:flex; align-items:center; gap:5px;">
-      <input 
-        type="radio" 
-        name="category" 
-        ${colorScheme === "med_17" ? "checked" : ""}
-        data-scheme="med_17"
-      />
-      Média de turbidez em 2017
-    </label>
-    <label style="display:flex; align-items:center; gap:5px;">
-      <input 
-        type="radio" 
-        name="category" 
-        ${colorScheme === "med_18" ? "checked" : ""}
-        data-scheme="med_18"
-      />
-      Média de turbidez em 2018
-    </label>
-    <label style="display:flex; align-items:center; gap:5px;">
-      <input 
-        type="radio" 
-        name="category" 
-        ${colorScheme === "med_19" ? "checked" : ""}
-        data-scheme="med_19"
-      />
-      Média de turbidez em 2019
-    </label>
-    <label style="display:flex; align-items:center; gap:5px;">
-      <input 
-        type="radio" 
-        name="category" 
-        ${colorScheme === "med_all" ? "checked" : ""}
-        data-scheme="med_all"
-      />
-      Média de turbidez 2013-2019
-    </label>
-  </div>
-  <hr>
-  <h4 style="margin:0 0 11px; border-bottom:1px solid #eee; padding-bottom:5px; padding-top:5px;">
-    © 2025 <a href="https://github.com/sigvum/turbidezrj" target=_blank>TurbidezRJ</a> - v0.1.2</span>
-  </h4>
-`;
+      <div style="display:flex; flex-direction:column; align-items:center; margin:10px 0;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="#1E90FF" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-droplets">
+          <path d="M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.84-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z"/>
+          <path d="M12.56 6.6A10.97 10.97 0 0 0 14 3.02c.5 2.5 2 4.9 4 6.5s3 3.5 3 5.5a6.98 6.98 0 0 1-11.91 4.97"/>
+        </svg>
+        <div style="
+          margin-top: 8px;
+          font-weight: bold;
+          color: black;
+          font-size: 1.7rem;
+          text-shadow: 
+            -1px -1px 0 white,
+            1px -1px 0 white,
+            -1px 1px 0 white,
+            1px 1px 0 white;
+        ">TurbidezRJ</div>
+      </div>
+       <div style="
+          margin-top: 4px;
+          font-size: 0.8rem;
+          color: white;
+          text-align: justify;
+        ">Mapa interativo com dados da Agência Nacional de Águas relativos às médias de turbidez da água no Rio de Janeiro no período entre 2013 a 2019</div>
+      <hr>
+      <h4 style="margin:0 0 11px; border-bottom:1px solid #eee; padding-bottom:5px; padding-top:5px;">
+        Categorizar por:
+      </h4>
+      <div style="display:grid; grid-template-columns:1fr; gap:8px; margin-bottom:15px;">
+        <label style="display:flex; align-items:center; gap:5px;">
+          <input 
+            type="radio" 
+            name="category" 
+            ${colorScheme === "med_13" ? "checked" : ""}
+            data-scheme="med_13"
+          />
+          Média de turbidez em 2013
+        </label>
+        <label style="display:flex; align-items:center; gap:5px;">
+          <input 
+            type="radio" 
+            name="category" 
+            ${colorScheme === "med_14" ? "checked" : ""}
+            data-scheme="med_14"
+          />
+          Média de turbidez em 2014
+        </label>
+        <label style="display:flex; align-items:center; gap:5px;">
+          <input 
+            type="radio" 
+            name="category" 
+            ${colorScheme === "med_15" ? "checked" : ""}
+            data-scheme="med_15"
+          />
+          Média de turbidez em 2015
+        </label>
+        <label style="display:flex; align-items:center; gap:5px;">
+          <input 
+            type="radio" 
+            name="category" 
+            ${colorScheme === "med_16" ? "checked" : ""}
+            data-scheme="med_16"
+          />
+          Média de turbidez em 2016
+        </label>
+        <label style="display:flex; align-items:center; gap:5px;">
+          <input 
+            type="radio" 
+            name="category" 
+            ${colorScheme === "med_17" ? "checked" : ""}
+            data-scheme="med_17"
+          />
+          Média de turbidez em 2017
+        </label>
+        <label style="display:flex; align-items:center; gap:5px;">
+          <input 
+            type="radio" 
+            name="category" 
+            ${colorScheme === "med_18" ? "checked" : ""}
+            data-scheme="med_18"
+          />
+          Média de turbidez em 2018
+        </label>
+        <label style="display:flex; align-items:center; gap:5px;">
+          <input 
+            type="radio" 
+            name="category" 
+            ${colorScheme === "med_19" ? "checked" : ""}
+            data-scheme="med_19"
+          />
+          Média de turbidez em 2019
+        </label>
+        <label style="display:flex; align-items:center; gap:5px;">
+          <input 
+            type="radio" 
+            name="category" 
+            ${colorScheme === "med_all" ? "checked" : ""}
+            data-scheme="med_all"
+          />
+          Média de turbidez 2013-2019
+        </label>
+      </div>
+    `;
+      let legendHtml = `
+    <hr>
+    <h4 style="margin:0 0 11px; border-bottom:1px solid #eee; padding-bottom:5px; padding-top:5px;">
+      Legenda de Turbidez (NTU):
+    </h4>
+    <div style="display:grid; grid-template-columns:auto 1fr; gap:5px; align-items:center; margin-bottom:15px;">
+  `;
 
-      div.innerHTML = categoryHtml;
+      intervalos.forEach((intervalo, index) => {
+        const isLast = index === intervalos.length - 1;
+        const labelText = isLast
+          ? `≥ ${intervalo.min.toFixed(1)}`
+          : `${intervalo.min.toFixed(1)} - ${intervalo.max.toFixed(1)}`;
+
+        legendHtml += `
+      <div style="width:20px; height:20px; background-color:hsl(240, 100%, ${intervalo.lightness}%); border:1px solid #999;"></div>
+      <div style="color:white;">${labelText}</div>
+    `;
+      });
+
+      legendHtml += `</div>`;
+
+      const footerHtml = `
+    <hr>
+    <h4 style="margin:0 0 11px; border-bottom:1px solid #eee; padding-bottom:5px; padding-top:5px;">
+      © 2025 <a href="https://github.com/sigvum/turbidezrj" target="_blank" style="color: #1E90FF; text-decoration: none;">TurbidezRJ</a> - v0.3.2
+    </h4>
+  `;
+      const panelContent = categoryHtml + legendHtml + footerHtml;
+
+      div.innerHTML = panelContent;
 
       const radioInputs = div.querySelectorAll('input[type="radio"]');
       radioInputs.forEach((input) => {
@@ -194,33 +270,33 @@ const SidePanel = ({ colorScheme, onColorSchemeChange, colorMapping }) => {
 
       const fontSizeControls = L.DomUtil.create("div", "font-size-controls");
       fontSizeControls.style.cssText = `
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 10px;
-      `;
+   display: flex;
+   justify-content: space-between;
+   margin-bottom: 10px;
+ `;
 
       const decreaseBtn = L.DomUtil.create("button", "font-size-btn");
       decreaseBtn.innerHTML = "A-";
       decreaseBtn.style.cssText = `
-        background: rgba(255,255,255,0.2);
-        border: none;
-        color: white;
-        padding: 2px 8px;
-        border-radius: 3px;
-        cursor: pointer;
-      `;
+   background: rgba(255,255,255,0.2);
+   border: none;
+   color: white;
+   padding: 2px 8px;
+   border-radius: 3px;
+   cursor: pointer;
+ `;
       decreaseBtn.onclick = decreaseFontSize;
 
       const increaseBtn = L.DomUtil.create("button", "font-size-btn");
       increaseBtn.innerHTML = "A+";
       increaseBtn.style.cssText = `
-        background: rgba(255,255,255,0.2);
-        border: none;
-        color: white;
-        padding: 2px 8px;
-        border-radius: 3px;
-        cursor: pointer;
-      `;
+   background: rgba(255,255,255,0.2);
+   border: none;
+   color: white;
+   padding: 2px 8px;
+   border-radius: 3px;
+   cursor: pointer;
+ `;
       increaseBtn.onclick = increaseFontSize;
 
       fontSizeControls.appendChild(decreaseBtn);
@@ -236,36 +312,36 @@ const SidePanel = ({ colorScheme, onColorSchemeChange, colorMapping }) => {
     return () => {
       map.removeControl(panel);
     };
-  }, [map, colorScheme, onColorSchemeChange, fontSize, panelWidth]);
+  }, [map, colorScheme, onColorSchemeChange, fontSize, panelWidth, intervalos]);
 
   return null;
 };
 
-const createCustomIcon = (ponto, colorScheme) => {
-  // Determina o valor de turbidez baseado no ano selecionado
+const createCustomIcon = (ponto, colorScheme, intervalos) => {
   let turbidez;
 
   if (colorScheme === "med_all") {
-    turbidez = parseFloat(ponto.med); // Média geral
+    turbidez = parseFloat(ponto.med);
   } else {
-    // Acessa diretamente as propriedades med_13, med_14, etc.
-    const year = colorScheme.split("_")[1]; // Extrai o ano (13, 14, etc.)
+    const year = colorScheme.split("_")[1];
     turbidez = parseFloat(ponto[`med_${year}`]);
   }
 
-  // Normaliza a turbidez (ajuste 100 conforme o valor máximo esperado)
-  const normalizedTurbidity = Math.min(turbidez / 100, 1);
+  if (isNaN(turbidez)) return L.divIcon({ html: "", className: "empty-icon" });
 
-  // Cores em tons de azul - mais escuro = mais turbidez
-  const hue = 240; // Azul
-  const saturation = 100;
-  const lightness = 100 - normalizedTurbidity * 60; // 40% a 100%
+  let lightness = 60;
+  if (intervalos && intervalos.length > 0) {
+    const intervalo =
+      intervalos.find((int) => turbidez >= int.min && turbidez <= int.max) ||
+      intervalos[intervalos.length - 1];
+    lightness = intervalo.lightness;
+  }
 
   return L.divIcon({
     html: `
       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" 
-           fill="hsl(${hue}, ${saturation}%, ${lightness}%)" 
-           stroke="hsl(${hue}, ${saturation}%, ${lightness - 10}%)"
+           fill="hsl(240, 100%, ${lightness}%)" 
+           stroke="hsl(240, 100%, ${lightness - 10}%)"
            stroke-width="1.5">
         <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
       </svg>
@@ -504,15 +580,47 @@ const MapContent = () => {
   const [map, setMap] = useState(null);
   const [pontos, setPontos] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [colorScheme, setColorScheme] = useState("med_all"); // Padrão: média geral
+  const [colorScheme, setColorScheme] = useState("med_all");
+  const [intervalos, setIntervalos] = useState([]);
   const mapRef = useRef();
   const markerRefs = useRef([]);
+  const [rioGeometry, setRioGeometry] = useState(null);
 
-  // Função para calcular o centro usando Turf
+  const RioDeJaneiroPolygon = ({ geoJSON }) => {
+    const map = useMap();
+
+    useEffect(() => {
+      if (!geoJSON || !map) return;
+
+      const style = {
+        weight: 3,
+        opacity: 1,
+        color: "#fc0505",
+        fillOpacity: 0,
+      };
+
+      const layer = L.geoJSON(geoJSON, { style }).addTo(map);
+
+      return () => {
+        if (map && layer) {
+          map.removeLayer(layer);
+        }
+      };
+    }, [geoJSON, map]);
+
+    return null;
+  };
+
+  useEffect(() => {
+    if (pontos.length > 0) {
+      const novosIntervalos = calcularIntervalos(pontos, colorScheme);
+      setIntervalos(novosIntervalos);
+    }
+  }, [pontos, colorScheme]);
+
   const calcularCentroTurf = (pontos) => {
-    if (pontos.length === 0) return [-15.799698, -47.894194]; // Fallback
+    if (pontos.length === 0) return [-15.799698, -47.894194];
 
-    // Cria uma FeatureCollection com todos os pontos
     const featureCollection = {
       type: "FeatureCollection",
       features: pontos.map((ponto) => ({
@@ -524,12 +632,10 @@ const MapContent = () => {
       })),
     };
 
-    // Calcula o centro geográfico
     const centroid = center(featureCollection);
-    return centroid.geometry.coordinates.reverse(); // Retorna [lat, lng]
+    return centroid.geometry.coordinates.reverse();
   };
 
-  // Ajusta o viewport quando os pontos mudam
   useEffect(() => {
     if (pontos.length > 0 && mapRef.current) {
       ajustarVisualizacao(pontos, mapRef.current);
@@ -539,8 +645,13 @@ const MapContent = () => {
   useEffect(() => {
     async function fetchData() {
       try {
-        const result = await selectPoints();
-        setPontos(result);
+        const [pontosData, rioData] = await Promise.all([
+          selectPoints(),
+          getRioGeometry(),
+        ]);
+
+        setPontos(pontosData);
+        setRioGeometry(rioData);
       } catch (error) {
         console.error("Erro ao buscar dados:", error);
       } finally {
@@ -572,6 +683,17 @@ const MapContent = () => {
         <LayersTreeControl />
         <MapSearch pontos={pontos} markerRefs={markerRefs} />
 
+        {/* Adiciona o polígono do Rio de Janeiro */}
+        {rioGeometry && (
+          <RioDeJaneiroPolygon
+            geoJSON={rioGeometry}
+            fillColor="#1E90FF"
+            fillOpacity={0.1}
+            borderColor="#1E90FF"
+            borderWidth={2}
+          />
+        )}
+
         {pontos.map((ponto, index) => (
           <Marker
             ref={(el) => (markerRefs.current[index] = el)}
@@ -580,7 +702,7 @@ const MapContent = () => {
               lat: parseFloat(ponto.latitude),
               lng: parseFloat(ponto.longitude),
             }}
-            icon={createCustomIcon(ponto, colorScheme)}
+            icon={createCustomIcon(ponto, colorScheme, intervalos)}
           >
             <Popup maxWidth={300} minWidth={250}>
               <div className="bg-blue-50 rounded-lg shadow overflow-hidden border border-blue-100">
@@ -590,7 +712,6 @@ const MapContent = () => {
                   </h3>
 
                   <div className="mt-2 grid grid-cols-2 gap-2">
-                    {/* Média geral */}
                     <div
                       className={`p-2 rounded ${
                         colorScheme === "med_all" ? "bg-blue-100" : ""
@@ -606,7 +727,6 @@ const MapContent = () => {
                       </div>
                     </div>
 
-                    {/* Anos individuais */}
                     {[13, 14, 15, 16, 17, 18, 19].map((year) => (
                       <div
                         key={year}
@@ -633,6 +753,7 @@ const MapContent = () => {
         <SidePanel
           colorScheme={colorScheme}
           onColorSchemeChange={setColorScheme}
+          pontos={pontos}
         />
       </MapContainer>
     </div>

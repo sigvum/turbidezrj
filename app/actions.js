@@ -1,7 +1,6 @@
 "use server";
 
 import postgres from "postgres";
-import { revalidatePath } from "next/cache";
 
 const sql = postgres(process.env.DATABASE_URL, {
   ssl: "allow",
@@ -25,10 +24,25 @@ export async function selectPoints() {
                 ST_Y(ST_Transform(geom, 4326)) AS latitude
             FROM turbidez_rj;
         `;
-    revalidatePath("/");
     return result;
   } catch (error) {
     console.error(error);
     return [];
+  }
+}
+
+export async function getRioGeometry() {
+  try {
+    const result = await sql`
+      SELECT ST_AsGeoJSON(ST_Simplify(geom, 0.01)) as geojson
+      FROM unidades
+      WHERE nome = 'Rio de Janeiro'
+      LIMIT 1;
+    `;
+
+    return result[0]?.geojson ? JSON.parse(result[0].geojson) : null;
+  } catch (error) {
+    console.error(error);
+    return null;
   }
 }

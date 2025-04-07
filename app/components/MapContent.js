@@ -7,6 +7,7 @@ import {
   useMap,
   ScaleControl,
   GeoJSON,
+  ZoomControl,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet.control.layers.tree/L.Control.Layers.Tree.css";
@@ -79,10 +80,16 @@ const calcularIntervalos = (pontos, colorScheme, numIntervalos = 7) => {
   return intervalos;
 };
 
-const SidePanel = ({ colorScheme, onColorSchemeChange, pontos }) => {
+const SidePanel = ({
+  colorScheme,
+  onColorSchemeChange,
+  pontos,
+  fontSize,
+  panelWidth,
+  onIncreaseFontSize,
+  onDecreaseFontSize,
+}) => {
   const map = useMap();
-  const [fontSize, setFontSize] = useState(0.65);
-  const [panelWidth, setPanelWidth] = useState(13);
   const [intervalos, setIntervalos] = useState([]);
 
   useEffect(() => {
@@ -92,20 +99,10 @@ const SidePanel = ({ colorScheme, onColorSchemeChange, pontos }) => {
     }
   }, [pontos, colorScheme]);
 
-  const increaseFontSize = () => {
-    setFontSize((prev) => Math.min(prev + 0.1, 1.2));
-    setPanelWidth((prev) => Math.min(prev + 1, 16));
-  };
-
-  const decreaseFontSize = () => {
-    setFontSize((prev) => Math.max(prev - 0.1, 0.5));
-    setPanelWidth((prev) => Math.max(prev - 1, 10));
-  };
-
   useEffect(() => {
     if (!map) return;
 
-    const panel = L.control({ position: "topright" });
+    const panel = L.control({ position: "topleft" });
 
     panel.onAdd = () => {
       const div = L.DomUtil.create("div", "side-panel");
@@ -120,7 +117,7 @@ const SidePanel = ({ colorScheme, onColorSchemeChange, pontos }) => {
         margin: 0;
         position: absolute;
         top: 0;
-        right: 0;
+        left: 0;
       `;
 
       const categoryHtml = `
@@ -132,7 +129,7 @@ const SidePanel = ({ colorScheme, onColorSchemeChange, pontos }) => {
         <div style="
           margin-top: 8px;
           font-weight: bold;
-          color: black;
+          color: #1E90FF;
           font-size: 1.7rem;
           text-shadow: 
             -1px -1px 0 white,
@@ -146,7 +143,7 @@ const SidePanel = ({ colorScheme, onColorSchemeChange, pontos }) => {
           font-size: 0.8rem;
           color: white;
           text-align: justify;
-        ">Mapa interativo com dados da Agência Nacional de Águas relativos às médias de turbidez da água no Rio de Janeiro no período entre 2013 a 2019</div>
+        ">Mapa interativo com <a href="https://dadosabertos.ana.gov.br/datasets/97e46167e18c4fb0bda9dd5f8ed7783b_8/about" target="_blank" style="color: #FFFFFF; text-decoration: none;"><u>dados oficiais</u></a> da Agência Nacional de Águas relativos às médias de turbidez da água no Rio de Janeiro no período entre 2013 a 2019</div>
       <hr>
       <h4 style="margin:0 0 11px; border-bottom:1px solid #eee; padding-bottom:5px; padding-top:5px;">
         Categorizar por:
@@ -226,35 +223,14 @@ const SidePanel = ({ colorScheme, onColorSchemeChange, pontos }) => {
         </label>
       </div>
     `;
-      let legendHtml = `
-    <hr>
-    <h4 style="margin:0 0 11px; border-bottom:1px solid #eee; padding-bottom:5px; padding-top:5px;">
-      Legenda de Turbidez (NTU):
-    </h4>
-    <div style="display:grid; grid-template-columns:auto 1fr; gap:5px; align-items:center; margin-bottom:15px;">
-  `;
-
-      intervalos.forEach((intervalo, index) => {
-        const isLast = index === intervalos.length - 1;
-        const labelText = isLast
-          ? `≥ ${intervalo.min.toFixed(1)}`
-          : `${intervalo.min.toFixed(1)} - ${intervalo.max.toFixed(1)}`;
-
-        legendHtml += `
-      <div style="width:20px; height:20px; background-color:hsl(240, 100%, ${intervalo.lightness}%); border:1px solid #999;"></div>
-      <div style="color:white;">${labelText}</div>
-    `;
-      });
-
-      legendHtml += `</div>`;
 
       const footerHtml = `
     <hr>
     <h4 style="margin:0 0 11px; border-bottom:1px solid #eee; padding-bottom:5px; padding-top:5px;">
-      © 2025 <a href="https://github.com/sigvum/turbidezrj" target="_blank" style="color: #1E90FF; text-decoration: none;">TurbidezRJ</a> - v0.3.2
+<div xmlns:cc="http://creativecommons.org/ns#" xmlns:dct="http://purl.org/dc/terms/" style="text-align: justify; line-height: 1.5;"><a property="dct:title" rel="cc:attributionURL" href="https://github.com/sigvum/turbidezrj" target="_blank" style="color: #FFFFFF; text-decoration: none; display: inline-flex; align-items: center;"><u>TurbidezRJ</u></a> by André Luiz Schilling, Ana Luiza Artine e Tatiana Ferreira de Lima is licensed under <a href="https://creativecommons.org/licenses/by/4.0/?ref=chooser-v1" target="_blank" rel="license noopener noreferrer" style="display:inline-flex; align-items: center; text-decoration: none; color: #FFFFFF;"> CC BY 4.0 <img style="height:22px!important;margin-left:3px;vertical-align:middle; display: inline-block;" src="https://mirrors.creativecommons.org/presskit/icons/cc.svg?ref=chooser-v1" alt=""><img style="height:22px!important;margin-left:3px;vertical-align:middle; display: inline-block;" src="https://mirrors.creativecommons.org/presskit/icons/by.svg?ref=chooser-v1" alt=""></a><div>
     </h4>
   `;
-      const panelContent = categoryHtml + legendHtml + footerHtml;
+      const panelContent = categoryHtml + footerHtml;
 
       div.innerHTML = panelContent;
 
@@ -285,7 +261,7 @@ const SidePanel = ({ colorScheme, onColorSchemeChange, pontos }) => {
    border-radius: 3px;
    cursor: pointer;
  `;
-      decreaseBtn.onclick = decreaseFontSize;
+      decreaseBtn.onclick = onDecreaseFontSize;
 
       const increaseBtn = L.DomUtil.create("button", "font-size-btn");
       increaseBtn.innerHTML = "A+";
@@ -297,7 +273,7 @@ const SidePanel = ({ colorScheme, onColorSchemeChange, pontos }) => {
    border-radius: 3px;
    cursor: pointer;
  `;
-      increaseBtn.onclick = increaseFontSize;
+      increaseBtn.onclick = onIncreaseFontSize;
 
       fontSizeControls.appendChild(decreaseBtn);
       fontSizeControls.appendChild(increaseBtn);
@@ -312,7 +288,75 @@ const SidePanel = ({ colorScheme, onColorSchemeChange, pontos }) => {
     return () => {
       map.removeControl(panel);
     };
-  }, [map, colorScheme, onColorSchemeChange, fontSize, panelWidth, intervalos]);
+  }, [
+    map,
+    colorScheme,
+    onColorSchemeChange,
+    fontSize,
+    panelWidth,
+    intervalos,
+    onIncreaseFontSize,
+    onDecreaseFontSize,
+  ]);
+
+  return null;
+};
+
+const LegendPanel = ({ intervalos, fontSize, panelWidth }) => {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!map) return;
+
+    const panel = L.control({ position: "topright" });
+
+    panel.onAdd = () => {
+      const div = L.DomUtil.create("div", "legend-panel");
+      div.style.cssText = `
+        background-color: rgba(32,32,32,0.8);
+        border-radius: 5px;
+        padding: 10px;
+        width: calc(${panelWidth}rem - 6rem);
+        box-shadow: 0 0 15px rgba(0,0,0,0.2);
+        z-index: 1000;
+        font-size: ${fontSize}rem;
+        color: white;
+        margin: 0;
+      `;
+
+      let legendHtml = `
+        <h4 style="margin:0 0 10px; border-bottom:1px solid #eee; padding-bottom:5px;">
+          Legenda:
+        </h4>
+        <div style="display:grid; grid-template-columns:auto 1fr; gap:5px; align-items:center;">
+      `;
+
+      intervalos.forEach((intervalo, index) => {
+        const isLast = index === intervalos.length - 1;
+        const labelText = isLast
+          ? `≥ ${intervalo.min.toFixed(1)}`
+          : `${intervalo.min.toFixed(1)} - ${intervalo.max.toFixed(1)}`;
+
+        legendHtml += `
+          <div style="width:18px; height:18px; background-color:hsl(240, 100%, ${intervalo.lightness}%); border:1px solid #999;"></div>
+          <div>${labelText}</div>
+        `;
+      });
+
+      legendHtml += `</div>`;
+
+      div.innerHTML = legendHtml;
+      L.DomEvent.disableClickPropagation(div);
+
+      return div;
+    };
+
+    panel.addTo(map);
+
+    return () => {
+      map.removeControl(panel);
+    };
+  }, [map, intervalos, fontSize, panelWidth]);
 
   return null;
 };
@@ -445,7 +489,7 @@ const LayersTreeControl = () => {
         const layersControl = L.control.layers
           .tree(baseTree, null, {
             collapsed: true,
-            position: "topleft",
+            position: "bottomleft",
           })
           .addTo(map);
 
@@ -585,6 +629,18 @@ const MapContent = () => {
   const mapRef = useRef();
   const markerRefs = useRef([]);
   const [rioGeometry, setRioGeometry] = useState(null);
+  const [fontSize, setFontSize] = useState(0.65);
+  const [panelWidth, setPanelWidth] = useState(13);
+
+  const increaseFontSize = () => {
+    setFontSize((prev) => Math.min(prev + 0.1, 1.2));
+    setPanelWidth((prev) => Math.min(prev + 1, 16));
+  };
+
+  const decreaseFontSize = () => {
+    setFontSize((prev) => Math.max(prev - 0.1, 0.5));
+    setPanelWidth((prev) => Math.max(prev - 1, 10));
+  };
 
   const RioDeJaneiroPolygon = ({ geoJSON }) => {
     const map = useMap();
@@ -674,12 +730,13 @@ const MapContent = () => {
         zoom={8}
         whenCreated={setMap}
         ref={mapRef}
-        zoomControl={true}
+        zoomControl={false}
         center={calcularCentroTurf(pontos)}
         style={{ height: "100%", width: "100%" }}
       >
         <ScaleControl imperial={false} />
         <Location />
+        <ZoomControl position={"bottomright"} />
         <LayersTreeControl />
         <MapSearch pontos={pontos} markerRefs={markerRefs} />
 
@@ -754,6 +811,15 @@ const MapContent = () => {
           colorScheme={colorScheme}
           onColorSchemeChange={setColorScheme}
           pontos={pontos}
+          fontSize={fontSize}
+          panelWidth={panelWidth}
+          onIncreaseFontSize={increaseFontSize}
+          onDecreaseFontSize={decreaseFontSize}
+        />
+        <LegendPanel
+          intervalos={intervalos}
+          fontSize={fontSize}
+          panelWidth={panelWidth}
         />
       </MapContainer>
     </div>

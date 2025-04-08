@@ -22,28 +22,37 @@ Principais funcionalidades:
 
 ## Pré-requisitos
 
-- Node.js (v16 ou superior)
-- npm ou yarn
+- Node.js (v22.14.0)
+- npm
 - Acesso ao banco de dados PostgreSQL com PostGIS
 
 ## Configuração do Ambiente
 
 1. Clone o repositório:
-
+```
 git clone https://github.com/sigvum/turbidezrj.git
 cd turbidezrj
+```
 
 2. Instale as dependências:
-   npm install
+```
+npm install
+```
 
-3. Configure a variável de ambiente:
-   Crie um arquivo .env.local na raiz do projeto com o seguinte conteúdo:
-   DATABASE_URL=postgresql://usuario:senha@servidor:porta/nome_do_banco
+4. Configure a variável de ambiente:
 
-4. Inicie o servidor de desenvolvimento:
-   npm run dev
+```javascript
+//Crie um arquivo .env.local na raiz do projeto com o seguinte conteúdo:
+DATABASE_URL=postgresql://usuario:senha@servidor:porta/nome_do_banco
+```
 
-O aplicativo estará disponível em http://localhost:3000.
+6. Inicie o servidor de desenvolvimento:
+```javascript
+npm run dev
+//O aplicativo estará disponível em http://localhost:3000.
+```
 
 5. Contribuições
-   Contribuições são bem-vindas! Sinta-se à vontade para abrir issues ou enviar pull requests.
+```javascript
+//Contribuições são bem-vindas! Sinta-se à vontade para abrir issues ou enviar pull requests.
+```

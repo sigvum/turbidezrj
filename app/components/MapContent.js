@@ -12,9 +12,25 @@ import {
 import "leaflet/dist/leaflet.css";
 import "leaflet.control.layers.tree/L.Control.Layers.Tree.css";
 import { PacmanLoader } from "react-spinners";
-import { selectPoints, getRioGeometry } from "../actions";
+import { selectPoints, getRioGeometry, selectBacias } from "../actions";
 import L from "leaflet";
 import { bbox, center } from "@turf/turf";
+
+function getRandomColor() {
+  const colors = [
+    "#1f77b4",
+    "#ff7f0e",
+    "#2ca02c",
+    "#d62728",
+    "#9467bd",
+    "#8c564b",
+    "#e377c2",
+    "#7f7f7f",
+    "#bcbd22",
+    "#17becf",
+  ];
+  return colors[Math.floor(Math.random() * colors.length)];
+}
 
 const ajustarVisualizacao = (pontos, map) => {
   if (pontos.length === 0) return;
@@ -448,18 +464,36 @@ if (L.Icon.Default.imagePath === undefined) {
   });
 }
 
-const LayersTreeControl = () => {
+const LayersTreeControl = ({ bacias }) => {
   const map = useMap();
   const [controlAdded, setControlAdded] = useState(false);
 
   useEffect(() => {
-    if (controlAdded) return;
+    if (controlAdded || bacias.length === 0) return;
 
     const setupLayersTree = async () => {
       const L = await import("leaflet");
       await import("leaflet.control.layers.tree");
 
       if (typeof L.control.layers.tree === "function") {
+        const baciaLayers = bacias.map((bacia) => {
+          return {
+            label: ` ${bacia.properties.nome}`,
+            layer: L.geoJSON(bacia.geojson, {
+              style: {
+                fillColor: getRandomColor(),
+                weight: 1,
+                opacity: 1,
+                color: "white",
+                fillOpacity: 0.5,
+              },
+              onEachFeature: (feature, layer) => {
+                layer.bindPopup(bacia.properties.nome);
+              },
+            }),
+          };
+        });
+
         const baseTree = {
           label: "<b>Mapas</b>",
           children: [
@@ -486,15 +520,21 @@ const LayersTreeControl = () => {
           ],
         };
 
+        const overlayTree = {
+          label: " <b>Bacias Hidrográficas</b>",
+          selectAllCheckbox: true,
+          collapsed: true,
+          children: baciaLayers,
+        };
+
         const layersControl = L.control.layers
-          .tree(baseTree, null, {
+          .tree(baseTree, overlayTree, {
             collapsed: true,
             position: "bottomleft",
           })
           .addTo(map);
 
         baseTree.children[0].layer.addTo(map);
-
         setControlAdded(true);
       } else {
         console.error(
@@ -504,7 +544,7 @@ const LayersTreeControl = () => {
     };
 
     setupLayersTree();
-  }, [map, controlAdded]);
+  }, [map, controlAdded, bacias]);
 
   return null;
 };
@@ -623,6 +663,7 @@ const MapSearch = ({ pontos, markerRefs }) => {
 const MapContent = () => {
   const [map, setMap] = useState(null);
   const [pontos, setPontos] = useState([]);
+  const [bacias, setBacias] = useState([]);
   const [loading, setLoading] = useState(true);
   const [colorScheme, setColorScheme] = useState("med_all");
   const [intervalos, setIntervalos] = useState([]);
@@ -701,13 +742,15 @@ const MapContent = () => {
   useEffect(() => {
     async function fetchData() {
       try {
-        const [pontosData, rioData] = await Promise.all([
+        const [pontosData, rioData, baciasData] = await Promise.all([
           selectPoints(),
           getRioGeometry(),
+          selectBacias(),
         ]);
 
         setPontos(pontosData);
         setRioGeometry(rioData);
+        setBacias(baciasData);
       } catch (error) {
         console.error("Erro ao buscar dados:", error);
       } finally {
@@ -737,10 +780,9 @@ const MapContent = () => {
         <ScaleControl imperial={false} />
         <Location />
         <ZoomControl position={"bottomright"} />
-        <LayersTreeControl />
+        <LayersTreeControl bacias={bacias} />
         <MapSearch pontos={pontos} markerRefs={markerRefs} />
 
-        {/* Adiciona o polígono do Rio de Janeiro */}
         {rioGeometry && (
           <RioDeJaneiroPolygon
             geoJSON={rioGeometry}

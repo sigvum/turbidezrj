@@ -16,50 +16,6 @@ import { selectPoints, getRioGeometry, selectBacias } from "../actions";
 import L from "leaflet";
 import { bbox, center } from "@turf/turf";
 
-const BaciasLayer = ({ bacias }) => {
-  const map = useMap();
-
-  useEffect(() => {
-    if (!bacias || bacias.length === 0 || !map) return;
-
-    const style = (feature) => {
-      return {
-        fillColor: getRandomColor(),
-        weight: 1,
-        opacity: 1,
-        color: "white",
-        fillOpacity: 0.5,
-      };
-    };
-
-    const onEachFeature = (feature, layer) => {
-      if (feature.properties) {
-        const popupContent = `
-          <div>
-            <strong>Bacia:</strong> ${feature.properties.nome}<br/>
-          </div>
-        `;
-        layer.bindPopup(popupContent);
-      }
-    };
-
-    const layers = bacias.map((bacia) => {
-      return L.geoJSON(bacia.geojson, {
-        style: style(bacia),
-        onEachFeature: onEachFeature,
-      });
-    });
-
-    const group = L.layerGroup(layers).addTo(map);
-
-    return () => {
-      map.removeLayer(group);
-    };
-  }, [bacias, map]);
-
-  return null;
-};
-
 function getRandomColor() {
   const colors = [
     "#1f77b4",
@@ -531,29 +487,12 @@ const LayersTreeControl = ({ bacias }) => {
                 color: "white",
                 fillOpacity: 0.5,
               },
+              onEachFeature: (feature, layer) => {
+                layer.bindPopup(bacia.properties.nome);
+              },
             }),
           };
         });
-
-        const groupedByMacro = bacias.reduce((acc, bacia) => {
-          const macroName = bacia.properties.nome_macro;
-          if (!acc[macroName]) {
-            acc[macroName] = [];
-          }
-          acc[macroName].push({
-            label: ` ${bacia.properties.nome}`,
-            layer: L.geoJSON(bacia.geojson, {
-              style: {
-                fillColor: getRandomColor(),
-                weight: 1,
-                opacity: 1,
-                color: "white",
-                fillOpacity: 0.5,
-              },
-            }),
-          });
-          return acc;
-        }, {});
 
         const baseTree = {
           label: "<b>Mapas</b>",
@@ -584,13 +523,8 @@ const LayersTreeControl = ({ bacias }) => {
         const overlayTree = {
           label: " <b>Bacias Hidrográficas</b>",
           selectAllCheckbox: true,
-          children: Object.entries(groupedByMacro).map(
-            ([macroName, bacias]) => ({
-              label: ` ${macroName}`,
-              selectAllCheckbox: true,
-              children: bacias,
-            })
-          ),
+          collapsed: true,
+          children: baciaLayers,
         };
 
         const layersControl = L.control.layers

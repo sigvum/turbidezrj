@@ -46,3 +46,26 @@ export async function getRioGeometry() {
     return null;
   }
 }
+
+export async function selectBacias() {
+  try {
+    const result = await sql`
+      SELECT 
+        ST_AsGeoJSON(ST_Simplify(geom, 0.01)) as geojson,
+        sub_bacias
+      FROM bacias_rj;
+    `;
+
+    if (Array.isArray(result)) {
+      return result.map((row) => ({
+        geojson: row.geojson ? JSON.parse(row.geojson) : null,
+        properties: {
+          nome: row.sub_bacias,
+        },
+      }));
+    }
+  } catch (error) {
+    console.error(error);
+    return [];
+  }
+}

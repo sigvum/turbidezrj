@@ -324,7 +324,7 @@ const LegendPanel = ({ intervalos, fontSize, panelWidth }) => {
   useEffect(() => {
     if (!map) return;
 
-    const panel = L.control({ position: "topright" });
+    const panel = L.control({ position: "bottomright" });
 
     panel.onAdd = () => {
       const div = L.DomUtil.create("div", "legend-panel");
@@ -530,7 +530,7 @@ const LayersTreeControl = ({ bacias }) => {
         const layersControl = L.control.layers
           .tree(baseTree, overlayTree, {
             collapsed: true,
-            position: "bottomleft",
+            position: "topright",
           })
           .addTo(map);
 

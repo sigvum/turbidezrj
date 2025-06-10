@@ -15,11 +15,13 @@
     "leaflet.control.layers.tree": "^1.1.1",
     "lucide-react": "^0.484.0",
     "next": "15.2.3",
+    "pg": "^8.16.0",
     "postgres": "^3.4.5",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-leaflet": "^5.0.0",
-    "react-spinners": "^0.15.0"
+    "react-spinners": "^0.15.0",
+    "wellknown": "^0.5.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

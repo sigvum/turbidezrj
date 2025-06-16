@@ -6,6 +6,105 @@ const sql = postgres(process.env.DATABASE_URL, {
   ssl: "allow",
 });
 
+const sql_pat = postgres(process.env.DATABASE_URL_pat, {
+  ssl: "allow",
+});
+
+export async function checkUser(name, email) {
+  try {
+    const result = await sql_pat`
+      SELECT infoaldeias
+      FROM patrim_users 
+      WHERE email = ${email ?? ""}
+      LIMIT 1`;
+
+    if (result?.length > 0) {
+      if (result[0].infoaldeias === true) {
+        return "Ativo";
+      } else {
+        return "Inativo";
+      }
+    } else {
+      try {
+        await sql_pat`
+          INSERT INTO patrim_users (name, email, infoaldeias)
+          VALUES (${name ?? ""}, ${email ?? ""}, false)`;
+
+        try {
+          const message =
+            "TurbidezRJ: Nov@ usuári@ registrad@: " + name + " - " + email;
+          const chatId = process.env.TELEGRAM_CHAT_ID;
+          const telegramBotToken = process.env.TELEGRAM_BOT_TOKEN;
+          const telegramApiUrl = `https://api.telegram.org/bot${telegramBotToken}/sendMessage`;
+          const response = await fetch(telegramApiUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              chat_id: chatId,
+              text: message,
+            }),
+          });
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(
+              `Erro ao enviar mensagem para o Telegram: ${response.status} - ${
+                errorData.description || response.statusText
+              }`
+            );
+          }
+        } catch (error) {
+          console.error(error);
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    }
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+export async function contactDev(name, email, messagedev) {
+  try {
+    const message = `TurbidezRJ: Mensagem ao Desenvolvedor:\nNome: ${name}\nEmail: ${email}\nMensagem: ${messagedev}`;
+    const chatId = process.env.TELEGRAM_CHAT_ID;
+    const telegramBotToken = process.env.TELEGRAM_BOT_TOKEN;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+    const telegramApiUrl = `https://api.telegram.org/bot${telegramBotToken}/sendMessage`;
+
+    const response = await fetch(telegramApiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: message,
+      }),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const errorData = await response
+        .json()
+        .catch(() => ({ description: response.statusText }));
+      throw new Error(
+        `Erro ${response.status}: ${
+          errorData.description || "Falha ao enviar mensagem"
+        }`
+      );
+    }
+  } catch (error) {
+    console.error(error);
+  }
+}
+
 export async function selectPoints() {
   try {
     const result = await sql`

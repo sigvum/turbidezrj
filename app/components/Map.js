@@ -8,12 +8,14 @@ const MapComponent = dynamic(
     ssr: false,
     loading: () => (
       <div className="flex justify-center items-center h-screen">
-        <PacmanLoader color="#fff0f0" />
+        <PacmanLoader color="#000000" />
       </div>
     ),
   }
 );
 
-export default function Map() {
-  return <MapComponent />;
+export default function Map({ pageProps }) {
+  const { session, api_url, api_usr, api_pwd } = pageProps || {};
+
+  return <MapComponent pageProps={{ session, api_url, api_usr, api_pwd }} />;
 }

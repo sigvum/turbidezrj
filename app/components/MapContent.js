@@ -6,7 +6,6 @@ import {
   Marker,
   useMap,
   ScaleControl,
-  GeoJSON,
   ZoomControl,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
@@ -15,6 +14,7 @@ import { PacmanLoader } from "react-spinners";
 import { selectPoints, getRioGeometry, selectBacias } from "../actions";
 import L from "leaflet";
 import { bbox, center } from "@turf/turf";
+import Profile from "./Profile";
 
 function getRandomColor() {
   const colors = [
@@ -161,10 +161,10 @@ const SidePanel = ({
           text-align: justify;
         ">Mapa interativo com <a href="https://dadosabertos.ana.gov.br/datasets/97e46167e18c4fb0bda9dd5f8ed7783b_8/about" target="_blank" style="color: #FFFFFF; text-decoration: none;"><u>dados oficiais</u></a> da Agência Nacional de Águas relativos às médias de turbidez da água no Rio de Janeiro no período entre 2013 a 2019</div>
       <hr>
-      <h4 style="margin:0 0 11px; border-bottom:1px solid #eee; padding-bottom:5px; padding-top:5px;">
+      <h4 style="color:#fff; margin:0 0 11px; border-bottom:1px solid #eee; padding-bottom:5px; padding-top:5px;">
         Categorizar por:
       </h4>
-      <div style="display:grid; grid-template-columns:1fr; gap:8px; margin-bottom:15px;">
+      <div style="color:#fff; display:grid; grid-template-columns:1fr; gap:8px; margin-bottom:15px;">
         <label style="display:flex; align-items:center; gap:5px;">
           <input 
             type="radio" 
@@ -243,7 +243,7 @@ const SidePanel = ({
       const footerHtml = `
     <hr>
     <h4 style="margin:0 0 11px; border-bottom:1px solid #eee; padding-bottom:5px; padding-top:5px;">
-<div xmlns:cc="http://creativecommons.org/ns#" xmlns:dct="http://purl.org/dc/terms/" style="text-align: justify; line-height: 1.5;"><a property="dct:title" rel="cc:attributionURL" href="https://github.com/sigvum/turbidezrj" target="_blank" style="color: #FFFFFF; text-decoration: none; display: inline-flex; align-items: center;"><u>TurbidezRJ</u></a> by André Luiz Schilling, Ana Luiza Artine e Tatiana Ferreira de Lima is licensed under <a href="https://creativecommons.org/licenses/by/4.0/?ref=chooser-v1" target="_blank" rel="license noopener noreferrer" style="display:inline-flex; align-items: center; text-decoration: none; color: #FFFFFF;"> CC BY 4.0 <img style="height:22px!important;margin-left:3px;vertical-align:middle; display: inline-block;" src="https://mirrors.creativecommons.org/presskit/icons/cc.svg?ref=chooser-v1" alt=""><img style="height:22px!important;margin-left:3px;vertical-align:middle; display: inline-block;" src="https://mirrors.creativecommons.org/presskit/icons/by.svg?ref=chooser-v1" alt=""></a><div>
+<div xmlns:cc="http://creativecommons.org/ns#" xmlns:dct="http://purl.org/dc/terms/" style="color:#fff; text-align: justify; line-height: 1.5;"><a property="dct:title" rel="cc:attributionURL" href="https://github.com/sigvum/turbidezrj" target="_blank" style="color: #FFFFFF; text-decoration: none; display: inline-flex; align-items: center;"><u>TurbidezRJ</u></a> by André Luiz Schilling, Ana Luiza Artine e Tatiana Ferreira de Lima is licensed under <a href="https://creativecommons.org/licenses/by/4.0/?ref=chooser-v1" target="_blank" rel="license noopener noreferrer" style="display:inline-flex; align-items: center; text-decoration: none; color: #FFFFFF;"> CC BY 4.0 <img style="height:22px!important;margin-left:3px;vertical-align:middle; display: inline-block;" src="https://mirrors.creativecommons.org/presskit/icons/cc.svg?ref=chooser-v1" alt=""><img style="height:22px!important;margin-left:3px;vertical-align:middle; display: inline-block;" src="https://mirrors.creativecommons.org/presskit/icons/by.svg?ref=chooser-v1" alt=""></a><div>
     </h4>
   `;
       const panelContent = categoryHtml + footerHtml;
@@ -588,16 +588,7 @@ const MapSearch = ({ pontos, markerRefs }) => {
   };
 
   return (
-    <div
-      style={{
-        position: "absolute",
-        top: "20px",
-        right: "9rem",
-        transform: "translateX(-50%)",
-        zIndex: 1000,
-        width: "30%",
-      }}
-    >
+    <div>
       <div style={{ position: "relative" }}>
         <input
           type="text"
@@ -632,6 +623,7 @@ const MapSearch = ({ pontos, markerRefs }) => {
               maxHeight: "200px",
               overflowY: "auto",
               boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
+              color: "white",
             }}
           >
             {suggestions.map((ponto, index) => (
@@ -660,7 +652,7 @@ const MapSearch = ({ pontos, markerRefs }) => {
   );
 };
 
-const MapContent = () => {
+const MapContent = ({ pageProps }) => {
   const [map, setMap] = useState(null);
   const [pontos, setPontos] = useState([]);
   const [bacias, setBacias] = useState([]);
@@ -672,6 +664,7 @@ const MapContent = () => {
   const [rioGeometry, setRioGeometry] = useState(null);
   const [fontSize, setFontSize] = useState(0.65);
   const [panelWidth, setPanelWidth] = useState(13);
+  const { session, api_url, api_usr, api_pwd } = pageProps || {};
 
   const increaseFontSize = () => {
     setFontSize((prev) => Math.min(prev + 0.1, 1.2));
@@ -763,7 +756,7 @@ const MapContent = () => {
   if (loading)
     return (
       <div className="flex justify-center items-center h-screen">
-        <PacmanLoader color="#fff0f0" />
+        <PacmanLoader color="#000000" />
       </div>
     );
 
@@ -781,7 +774,29 @@ const MapContent = () => {
         <Location />
         <ZoomControl position={"bottomright"} />
         <LayersTreeControl bacias={bacias} />
-        <MapSearch pontos={pontos} markerRefs={markerRefs} />
+
+        <div
+          style={{
+            top: "1%",
+            position: "absolute",
+            left: "48%",
+            transform: "translateX(-50%)",
+            zIndex: 1000,
+            display: "flex",
+            alignItems: "flex-start",
+            gap: "2%",
+            width: "auto",
+          }}
+        >
+          <div
+            style={{
+              opacity: 0.7,
+            }}
+          >
+            <Profile pageProps={{ session, api_url, api_usr, api_pwd }} />
+          </div>
+          <MapSearch pontos={pontos} markerRefs={markerRefs} />
+        </div>
 
         {rioGeometry && (
           <RioDeJaneiroPolygon

@@ -6,28 +6,29 @@ const sql = postgres(process.env.DATABASE_URL, {
   ssl: "allow",
 });
 
-const sql_pat = postgres(process.env.DATABASE_URL_pat, {
-  ssl: "allow",
-});
-
 export async function checkUser(name, email) {
+  if (!email) {
+    console.error("Email não fornecido");
+    return null; // Ou outra lógica para tratar isso
+  }
+
   try {
-    const result = await sql_pat`
-      SELECT infoaldeias
-      FROM patrim_users 
-      WHERE email = ${email ?? ""}
+    const result = await sql`
+      SELECT ativacao
+      FROM turbidez_rj_users 
+      WHERE email = ${email}
       LIMIT 1`;
 
     if (result?.length > 0) {
-      if (result[0].infoaldeias === true) {
+      if (result[0].ativacao === true) {
         return "Ativo";
       } else {
         return "Inativo";
       }
     } else {
       try {
-        await sql_pat`
-          INSERT INTO patrim_users (name, email, infoaldeias)
+        await sql`
+          INSERT INTO turbidez_rj_users (name, email, ativacao)
           VALUES (${name ?? ""}, ${email ?? ""}, false)`;
 
         try {

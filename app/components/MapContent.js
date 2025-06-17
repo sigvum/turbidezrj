@@ -342,7 +342,7 @@ const LegendPanel = ({ intervalos, fontSize, panelWidth }) => {
 
       let legendHtml = `
         <h4 style="margin:0 0 10px; border-bottom:1px solid #eee; padding-bottom:5px;">
-          Legenda:
+          Legenda (índices de turbidez):
         </h4>
         <div style="display:grid; grid-template-columns:auto 1fr; gap:5px; align-items:center;">
       `;
@@ -819,7 +819,7 @@ const MapContent = ({ pageProps }) => {
             icon={createCustomIcon(ponto, colorScheme, intervalos)}
           >
             <Popup maxWidth={300} minWidth={250}>
-              <div className="bg-blue-50 rounded-lg shadow overflow-hidden border border-blue-100">
+              <div className="bg-blue-200 rounded-lg shadow overflow-hidden border border-blue-100">
                 <div className="px-4 py-3">
                   <h3 className="font-bold text-lg text-blue-800">
                     {ponto.corpodagua}
@@ -834,7 +834,7 @@ const MapContent = ({ pageProps }) => {
                       <div className="text-xs text-blue-600">
                         Média 2013-2019
                       </div>
-                      <div className="font-bold">
+                      <div className="font-bold text-black">
                         {ponto.med
                           ? parseFloat(ponto.med).toFixed(2) + " NTU"
                           : "-"}
@@ -849,7 +849,7 @@ const MapContent = ({ pageProps }) => {
                         }`}
                       >
                         <div className="text-xs text-blue-600">20{year}</div>
-                        <div className="font-bold">
+                        <div className="font-bold text-black">
                           {ponto[`med_${year}`]
                             ? parseFloat(ponto[`med_${year}`]).toFixed(2) +
                               " NTU"

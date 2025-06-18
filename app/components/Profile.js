@@ -127,7 +127,8 @@ export default function Profile({ pageProps }) {
                   <Card className="bg-gray-50 dark:bg-gray-800">
                     <CardHeader>
                       <CardTitle className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                        Acesso ao <i>WFS (Web Feature Service)</i>
+                        Acesso à <i>interface</i> de programação de aplicações (
+                        <i>API</i>) no padrão <i>OGC API - Features</i>
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="p-4 pt-0">
@@ -156,8 +157,9 @@ export default function Profile({ pageProps }) {
                   </Card>
                 ) : api_url === false ? (
                   <p className="text-sm text-gray-700 dark:text-gray-300">
-                    Aguarde a liberação do acesso ao{" "}
-                    <i>WFS (Web Feature Service)</i> por parte do administrador.
+                    Aguarde a liberação do acesso à <i>interface</i> de
+                    programação de aplicações (<i>API</i>) no padrão{" "}
+                    <i>OGC API - Features</i> por parte do administrador.
                   </p>
                 ) : (
                   <p className="text-sm text-gray-700 dark:text-gray-300">
@@ -170,8 +172,8 @@ export default function Profile({ pageProps }) {
             <CardContent className="flex flex-col items-center justify-center gap-6 p-6 text-center max-w-md mx-auto">
               <p className="text-base md:text-lg text-gray-800 font-medium text-justify leading-relaxed">
                 Desbloqueie outros recursos do TurbidezRJ. Faça login com sua
-                conta Google para acessar o nosso{" "}
-                <i>WFS (Web Feature Service)</i> no padrão{" "}
+                conta Google para acessar a nossa <i>interface</i> de
+                programação de aplicações (<i>API</i>) no padrão{" "}
                 <i>OGC API - Features</i> e explorar interativamente os dados
                 compilados da Agência Nacional de Águas sobre a turbidez da água
                 no Rio de Janeiro.

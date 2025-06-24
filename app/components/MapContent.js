@@ -342,7 +342,7 @@ const LegendPanel = ({ intervalos, fontSize, panelWidth }) => {
 
       let legendHtml = `
         <h4 style="margin:0 0 10px; border-bottom:1px solid #eee; padding-bottom:5px;">
-          Legenda (índices de turbidez):
+          Legenda (<a property="dct:title" rel="cc:attributionURL" href="https://pt.wikipedia.org/wiki/Nefel%C3%B3metro" target="_blank" style="color: #FFFFFF; text-decoration: none; display: inline-flex; align-items: center;"><u>NTU</u></a>):
         </h4>
         <div style="display:grid; grid-template-columns:auto 1fr; gap:5px; align-items:center;">
       `;

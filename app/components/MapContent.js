@@ -478,7 +478,7 @@ const LayersTreeControl = ({ bacias }) => {
       if (typeof L.control.layers.tree === "function") {
         const baciaLayers = bacias.map((bacia) => {
           return {
-            label: ` ${bacia.properties.nome}`,
+            label: `&nbsp&nbsp ${bacia.properties.nome}`,
             layer: L.geoJSON(bacia.geojson, {
               style: {
                 fillColor: getRandomColor(),
@@ -498,7 +498,7 @@ const LayersTreeControl = ({ bacias }) => {
           label: "<b>Mapas</b>",
           children: [
             {
-              label: " Google Earth",
+              label: "&nbsp&nbsp Google Earth",
               layer: L.tileLayer(
                 "https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
                 {
@@ -508,7 +508,7 @@ const LayersTreeControl = ({ bacias }) => {
               ),
             },
             {
-              label: " OpenStreetMap",
+              label: "&nbsp&nbsp OpenStreetMap",
               layer: L.tileLayer(
                 "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
                 {
@@ -521,7 +521,7 @@ const LayersTreeControl = ({ bacias }) => {
         };
 
         const overlayTree = {
-          label: " <b>Bacias Hidrográficas</b>",
+          label: "&nbsp&nbsp<b>Sub-bacias Hidrográficas</b>",
           selectAllCheckbox: true,
           collapsed: true,
           children: baciaLayers,
